@@ -1,13 +1,13 @@
 Gem::Specification.new do |spec|
-  spec.name = "sidekiq-async_http"
+  spec.name = "async_http_pool"
   spec.version = File.read(File.expand_path("../VERSION", __FILE__)).strip
   spec.authors = ["Brian Durand"]
   spec.email = ["bbdurand@gmail.com"]
 
-  spec.summary = "Offload long-running HTTP requests from Sidekiq workers to a dedicated async I/O processor"
-  spec.description = "This gem provides a mechanism to offload long-running HTTP requests from Sidekiq workers to a dedicated async I/O processor running in the same process, freeing the worker thread immediately while the HTTP request is in flight."
+  spec.summary = "Generic async HTTP connection pool for Ruby applications using Fiber-based concurrency"
+  spec.description = "This gem provides a dedicated async HTTP processor that uses Ruby's Fiber scheduler for non-blocking I/O. Application threads hand off HTTP requests to the processor and return immediately. The processor handles hundreds of concurrent HTTP connections using fibers, then notifies the application when responses arrive via a pluggable callback mechanism. This design keeps application threads free to do other work while HTTP requests are in flight."
 
-  spec.homepage = "https://github.com/bdurand/sidekiq-async_http"
+  spec.homepage = "https://github.com/bdurand/async_http_pool"
   spec.license = "MIT"
 
   spec.metadata = {
