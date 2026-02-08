@@ -19,3 +19,7 @@ appraise "activerecord_7.2" do
   gem "activerecord", "~> 7.2.0"
   gem "sqlite3", "~> 1.4"
 end
+
+appraise "redis_5" do
+  gem "redis", "~> 5.0.0"
+end
