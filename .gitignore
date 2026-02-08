@@ -1,0 +1,16 @@
+.DS_Store
+.bundle/
+.rspec
+.ruby-version
+.yardoc/
+.env
+Gemfile.lock
+coverage/
+gemfiles/*.gemfile.lock
+log/*.log
+pkg/
+rdoc/
+doc/
+test_app/.session.key
+test_app/tmp
+.claude/
