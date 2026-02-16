@@ -74,6 +74,42 @@ RSpec.describe AsyncHttpPool::RequestTemplate do
         # Params are encoded and added to query string
       end
 
+      it "merges template params with request params" do
+        template_with_params = described_class.new(
+          base_url: base_url,
+          headers: default_headers,
+          params: {locale: "en", page: 1}
+        )
+
+        result = template_with_params.request(:get, "/users", params: {page: 2, limit: 10})
+
+        expect(result.url).to eq("https://api.example.com/users?locale=en&page=2&limit=10")
+      end
+
+      it "uses request params when template params are nil" do
+        template_with_nil_params = described_class.new(
+          base_url: base_url,
+          headers: default_headers,
+          params: nil
+        )
+
+        result = template_with_nil_params.request(:get, "/users", params: {page: 2, limit: 10})
+
+        expect(result.url).to eq("https://api.example.com/users?page=2&limit=10")
+      end
+
+      it "keeps URL unchanged when both template and request params are nil" do
+        template_with_nil_params = described_class.new(
+          base_url: base_url,
+          headers: default_headers,
+          params: nil
+        )
+
+        result = template_with_nil_params.request(:get, "/users", params: nil)
+
+        expect(result.url).to eq("https://api.example.com/users")
+      end
+
       it "merges params with existing query string" do
         template.request(:get, "/users?active=true", params: {page: 1})
         # Should merge both query params

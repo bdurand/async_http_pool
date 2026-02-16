@@ -30,10 +30,12 @@ module AsyncHttpPool
     #
     # @param base_url [String, URI::HTTP, nil] Base URL for relative URIs
     # @param headers [Hash] Default headers for all requests
+    # @param params [Hash, nil] Default query parameters to add to all requests
     # @param timeout [Float] Default request timeout in seconds
-    def initialize(base_url: nil, headers: {}, timeout: 30)
+    def initialize(base_url: nil, headers: {}, params: nil, timeout: 30)
       @base_url = base_url
       @headers = HttpHeaders.new(headers)
+      @params = params
       @timeout = timeout
     end
 
@@ -44,17 +46,13 @@ module AsyncHttpPool
     # @param body [String, nil] request body
     # @param json [Object, nil] JSON object to serialize (cannot use with body)
     # @param headers [Hash] additional headers to merge with client headers
-    # @param params [Hash] query parameters to add to URL
+    # @param params [Hash, nil] query parameters to add to URL
     # @return [Request] request object
-    def request(method, uri, body: nil, json: nil, headers: {}, params: {}, timeout: nil)
+    def request(method, uri, body: nil, json: nil, headers: nil, params: nil, timeout: nil)
       full_uri = @base_url ? URI.join(@base_url, uri.to_s) : URI(uri)
-      if params.any?
-        query_string = URI.encode_www_form(params)
-        full_uri.query = [full_uri.query, query_string].compact.join("&")
-      end
 
-      # Merge headers
       merged_headers = headers&.any? ? @headers.merge(headers) : @headers
+      merged_params = @params ? (@params.merge(params || {})) : params
 
       # Create request with all parameters
       Request.new(
@@ -63,6 +61,7 @@ module AsyncHttpPool
         headers: merged_headers.to_h,
         body: body,
         json: json,
+        params: merged_params,
         timeout: timeout || @timeout
       )
     end

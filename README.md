@@ -155,6 +155,70 @@ post_request = template.post("/users", json: {name: "John"})
 
 Templates support all HTTP methods (`get`, `post`, `put`, `patch`, `delete`) and handle URL joining, header merging, and query parameter encoding.
 
+## RequestHelper Mixin
+
+Use `AsyncHttpPool::RequestHelper` when you want a simpler API for creating and dispatching async HTTP requests directly from your class.
+
+1. Register a request handler once. The handler receives a `RequestContext` and is responsible for dispatching the request through your app's queue/processor integration.
+2. Include `AsyncHttpPool::RequestHelper` in your class.
+3. Optionally define a `request_template` for shared `base_url`, headers, and timeout.
+4. Call `async_get`, `async_post`, `async_put`, `async_patch`, `async_delete`, or `async_request`.
+
+```ruby
+AsyncHttpPool::RequestHelper.register_handler do |request_context|
+  # Example integration point. Adapt this to your app.
+  # Build a RequestTask and enqueue it to your processor.
+  task = AsyncHttpPool::RequestTask.new(
+    request: request_context.request,
+    task_handler: MyTaskHandler.new,
+    callback: request_context.callback,
+    callback_args: request_context.callback_args,
+    raise_error_responses: request_context.raise_error_responses
+  )
+
+  processor.enqueue(task)
+end
+
+class ApiClient
+  include AsyncHttpPool::RequestHelper
+
+  request_template(
+    base_url: "https://api.example.com",
+    headers: {"Authorization" => "Bearer #{ENV["API_KEY"]}"},
+    timeout: 60
+  )
+
+  def fetch_user(user_id)
+    async_get(
+      "/users/#{user_id}",
+      callback: FetchUserCallback,
+      callback_args: {user_id: user_id}
+    )
+  end
+
+  def update_user(user_id, data)
+    async_patch(
+      "/users/#{user_id}",
+      json: data,
+      callback: UpdateUserCallback,
+      callback_args: {user_id: user_id}
+    )
+  end
+end
+```
+
+You can also call the `async_*` methods directly on `RequestHelper` if you don't want to include the module:
+
+```ruby
+AsyncHttpPool::RequestHelper.async_get(
+  "https://api.example.com/users/123",
+  callback: FetchUserCallback,
+  callback_args: {user_id: 123}
+)
+```
+
+If you are using the [sidekiq-async_http](https://github.com/bdurand/sidekiq-async_http) gem or the [solid_queue-async_http](https://github.com/bdurand/solid_queue-async_http) gem, the appropriate handler will automatically be registered for you.
+
 ## Callback Arguments
 
 Pass custom data through the request/response cycle using `callback_args`:

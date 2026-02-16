@@ -42,6 +42,34 @@ RSpec.describe AsyncHttpPool::Request do
       expect(request.max_redirects).to be_nil
     end
 
+    context "with params" do
+      it "serializes params and appends them to the url" do
+        request = described_class.new(
+          :get,
+          "https://api.example.com/users",
+          params: {page: 1, q: "hello world"}
+        )
+
+        expect(request.url).to eq("https://api.example.com/users?page=1&q=hello+world")
+      end
+
+      it "merges params with existing query params on the url" do
+        request = described_class.new(
+          :get,
+          "https://api.example.com/users?active=true",
+          params: {page: 1}
+        )
+
+        expect(request.url).to eq("https://api.example.com/users?active=true&page=1")
+      end
+
+      it "keeps url unchanged when params is nil" do
+        request = described_class.new(:get, "https://api.example.com/users?active=true", params: nil)
+
+        expect(request.url).to eq("https://api.example.com/users?active=true")
+      end
+    end
+
     context "validation" do
       it "casts method to a symbol" do
         request = described_class.new("POST", "https://example.com")
