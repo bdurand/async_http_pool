@@ -77,9 +77,10 @@ module AsyncHttpPool
 
       # Unregisters the current request handler.
       #
+      # @param handler [#call, nil] If provided, only unregisters if the given handler matches the current handler
       # @return [void]
-      def unregister_handler
-        @handler = nil
+      def unregister_handler(handler = nil)
+        @handler = nil if @handler == handler || handler.nil?
       end
 
       # Executes the registered request handler with the given request context.
