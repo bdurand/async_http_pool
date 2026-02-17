@@ -48,9 +48,10 @@ module AsyncHttpPool
 
       # Registers a request handler that will be called to process each request.
       # The handler must be a callable object (responds to `call`) or a block.
-      # It should also return the request id for the request.
       #
       # The handler will receive a RequestContext object with the request and callback information.
+      # It should return the request id for the enqueued request.
+      #
       # @param callable [#call, nil] A callable object that will handle requests
       # @yield [RequestContext] If a block is given, it will be used as the request handler
       # @raise [ArgumentError] if neither a callable nor a block is provided, or if both are provided
@@ -79,7 +80,7 @@ module AsyncHttpPool
       #
       # @param request_context [RequestContext] the context of the request to handle
       # @raise [RuntimeError] if no handler is registered
-      # @return [void]
+      # @return [Object] return value from the registered request handler
       def execute(request_context)
         raise "No request handler registered; you must register a handler before executing requests" unless @handler
 
@@ -148,12 +149,14 @@ module AsyncHttpPool
       #
       # @param base_url [String, nil] optional base URL used to resolve relative request URLs
       # @param headers [Hash] default headers for requests
-      # @param timeout [Numeric] default timeout in seconds
+      # @param params [Hash, nil] default query parameters for requests
+      # @param timeout [Float] default timeout in seconds
       # @return [void]
-      def request_template(base_url: nil, headers: {}, timeout: 30)
+      def request_template(base_url: nil, headers: {}, params: nil, timeout: 30)
         @async_http_pool_request_template = RequestTemplate.new(
           base_url: base_url,
           headers: headers,
+          params: params,
           timeout: timeout
         )
       end
@@ -206,7 +209,7 @@ module AsyncHttpPool
       # @api private
       def async_request_template
         return @async_http_pool_request_template if @async_http_pool_request_template
-        return superclass.async_request_template if superclass.include?(Sidekiq::AsyncHttp::RequestHelper)
+        return superclass.async_request_template if superclass.include?(AsyncHttpPool::RequestHelper)
 
         nil
       end
