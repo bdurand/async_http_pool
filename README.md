@@ -159,6 +159,8 @@ Templates support all HTTP methods (`get`, `post`, `put`, `patch`, `delete`) and
 
 Use `AsyncHttpPool::RequestHelper` when you want a simpler API for creating and dispatching async HTTP requests directly from your class.
 
+This module allows you to use the same interface for making HTTP requests while swapping out the underlying queueing mechanism for handling responses asynchronously. By registering a custom handler, you can integrate with any job queue system (Sidekiq, Solid Queue, etc.) without changing your application code that makes HTTP requests. This decouples your request interface from your async processing infrastructure.
+
 1. Register a request handler once. The handler receives a `RequestContext` and is responsible for dispatching the request through your app's queue/processor integration.
 2. Include `AsyncHttpPool::RequestHelper` in your class.
 3. Optionally define a `request_template` for shared `base_url`, headers, and timeout.

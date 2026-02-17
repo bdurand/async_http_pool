@@ -6,6 +6,12 @@ module AsyncHttpPool
   # Include this module in your class to get instance-level and class-level helpers for building
   # requests and dispatching them through a registered handler.
   #
+  # This module allows you to use the same interface for making HTTP requests while swapping out
+  # the underlying queueing mechanism for handling responses asynchronously. By registering a
+  # custom handler, you can integrate with any job queue system (Sidekiq, Solid Queue, etc.)
+  # without changing your application code that makes HTTP requests. This decouples your request
+  # interface from your async processing infrastructure.
+  #
   # The common workflow is:
   # 1. Register a global request handler with {.register_handler}.
   # 2. Include this module in a class.
