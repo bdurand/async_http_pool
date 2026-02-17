@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "securerandom"
-
 module AsyncHttpPool
   # Represents an async HTTP request that will be processed by the async processor.
   #
@@ -59,6 +57,8 @@ module AsyncHttpPool
     # @param url [String, URI::Generic] The request URL.
     # @param headers [Hash, HttpHeaders] Request headers.
     # @param body [String, nil] Request body.
+    # @param json [Object, nil] JSON body to be serialized (alternative to body).
+    # @param params [Hash, nil] Query parameters to append to the URL.
     # @param timeout [Numeric, nil] Overall timeout in seconds.
     # @param max_redirects [Integer, nil] Maximum redirects to follow (nil uses config, 0 disables).
     def initialize(
@@ -67,11 +67,17 @@ module AsyncHttpPool
       headers: {},
       body: nil,
       json: nil,
+      params: nil,
       timeout: nil,
       max_redirects: nil
     )
       @http_method = http_method.is_a?(String) ? http_method.downcase.to_sym : http_method
-      @url = url.is_a?(URI::Generic) ? url.to_s : url
+
+      unless url.nil? || url.is_a?(String) || url.is_a?(URI::Generic)
+        raise ArgumentError.new("url must be a String or URI, got: #{url.class}")
+      end
+
+      @url = normalized_url(url, params)
       @headers = headers.is_a?(HttpHeaders) ? headers : HttpHeaders.new(headers)
       @body = (body == "") ? nil : body
       @timeout = timeout
@@ -102,6 +108,15 @@ module AsyncHttpPool
     end
 
     private
+
+    def normalized_url(url, params)
+      uri = url.is_a?(URI::Generic) ? url.dup : URI(url.to_s)
+      return uri.to_s unless params&.any?
+
+      serialized_params = URI.encode_www_form(params)
+      uri.query = [uri.query, serialized_params].compact.reject(&:empty?).join("&")
+      uri.to_s
+    end
 
     # Validate the request has required HTTP parameters.
     # @raise [ArgumentError] if method or url is invalid

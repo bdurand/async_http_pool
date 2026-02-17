@@ -31,6 +31,9 @@ Immutable value object representing an HTTP response. Includes status, headers, 
 ### Error Classes
 Typed error classes (`HttpError`, `RequestError`, `RedirectError`) that are also serializable. Include context about the failed request and callback arguments.
 
+### RequestHelper
+A mixin module that provides a simplified interface for making async HTTP requests. Allows applications to use the same request interface while swapping out the underlying queueing mechanism. By registering a custom handler, applications can integrate with any job queue system (Sidekiq, Solid Queue, etc.) without changing request-making code. This decouples the request interface from the async processing infrastructure.
+
 ### Client/ClientPool
 Internal HTTP client that handles connection pooling, HTTP/2 support, and request execution within the Fiber reactor.
 
@@ -79,6 +82,54 @@ task = AsyncHttpPool::RequestTask.new(
 )
 processor.enqueue(task)
 ```
+
+## RequestHelper Integration Pattern
+
+The `RequestHelper` module provides an alternative, higher-level API for making async HTTP requests. Instead of manually building `RequestTask` objects and enqueuing them to a processor, you can include the module and use convenience methods.
+
+Key benefits:
+- **Interface stability**: Application code making HTTP requests stays the same even when changing job queue systems
+- **Reduced boilerplate**: No need to manually construct `Request` and `RequestTask` objects
+- **Handler abstraction**: The registered handler encapsulates the processor/job queue integration
+
+Example:
+```ruby
+# Register a handler once (typically in an initializer)
+AsyncHttpPool::RequestHelper.register_handler do |request_context|
+  task = AsyncHttpPool::RequestTask.new(
+    request: request_context.request,
+    task_handler: MyTaskHandler.new,
+    callback: request_context.callback,
+    callback_args: request_context.callback_args,
+    raise_error_responses: request_context.raise_error_responses
+  )
+  processor.enqueue(task)
+end
+
+# Use in your application code
+class ApiClient
+  include AsyncHttpPool::RequestHelper
+
+  request_template(
+    base_url: "https://api.example.com",
+    headers: {"Authorization" => "Bearer token"},
+    timeout: 60
+  )
+
+  def fetch_user(user_id)
+    async_get(
+      "/users/#{user_id}",
+      callback: FetchUserCallback,
+      callback_args: {user_id: user_id}
+    )
+  end
+end
+```
+
+The `RequestHelper` delegates to the registered handler, which translates the `RequestContext` into whatever format your job system needs. This allows you to:
+- Switch from Sidekiq to Solid Queue without changing `ApiClient`
+- Use different queue systems in different environments (inline processing in tests, background jobs in production)
+- Test request logic independently of the queue mechanism
 
 ## Request Lifecycle
 
@@ -262,3 +313,7 @@ For large request/response payloads, the `ExternalStorage` class provides option
 - **Atomic operations**: `Concurrent::AtomicReference` for state
 - **Synchronized access**: Mutexes protect shared data structures
 - **Immutable values**: Request/Response are immutable once created
+
+## Further Reading
+
+- [README](README.md)
