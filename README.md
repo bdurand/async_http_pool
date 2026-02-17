@@ -506,6 +506,10 @@ Open a pull request on [GitHub](https://github.com/bdurand/async_http_pool).
 
 Please use the [standardrb](https://github.com/testdouble/standard) syntax and lint your code with `standardrb --fix` before submitting.
 
+## Further Reading
+
+- [Architecture](ARCHITECTURE.md)
+
 ## License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
