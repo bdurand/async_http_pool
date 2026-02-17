@@ -2,7 +2,7 @@
 
 ## Overview
 
-AsyncHttpPool provides a mechanism to offload HTTP requests from application threads to a dedicated async I/O processor. The gem uses Ruby's Fiber-based concurrency to handle hundreds of concurrent HTTP requests without blocking application threads.
+PatientHttp provides a mechanism to offload HTTP requests from application threads to a dedicated async I/O processor. The gem uses Ruby's Fiber-based concurrency to handle hundreds of concurrent HTTP requests without blocking application threads.
 
 ## Key Design Principles
 
@@ -55,7 +55,7 @@ The `TaskHandler` abstract class defines how the processor communicates results 
 
 Example:
 ```ruby
-class MyTaskHandler < AsyncHttpPool::TaskHandler
+class MyTaskHandler < PatientHttp::TaskHandler
   def initialize(job_id)
     @job_id = job_id
   end
@@ -74,8 +74,8 @@ class MyTaskHandler < AsyncHttpPool::TaskHandler
 end
 
 # Enqueue a request
-task = AsyncHttpPool::RequestTask.new(
-  request: AsyncHttpPool::Request.new(:get, "https://api.example.com/data"),
+task = PatientHttp::RequestTask.new(
+  request: PatientHttp::Request.new(:get, "https://api.example.com/data"),
   task_handler: MyTaskHandler.new("job-123"),
   callback: "ProcessDataCallback",
   callback_args: {user_id: 123}
@@ -95,8 +95,8 @@ Key benefits:
 Example:
 ```ruby
 # Register a handler once (typically in an initializer)
-AsyncHttpPool::RequestHelper.register_handler do |request_context|
-  task = AsyncHttpPool::RequestTask.new(
+PatientHttp::RequestHelper.register_handler do |request_context|
+  task = PatientHttp::RequestTask.new(
     request: request_context.request,
     task_handler: MyTaskHandler.new,
     callback: request_context.callback,
@@ -108,7 +108,7 @@ end
 
 # Use in your application code
 class ApiClient
-  include AsyncHttpPool::RequestHelper
+  include PatientHttp::RequestHelper
 
   request_template(
     base_url: "https://api.example.com",

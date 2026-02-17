@@ -4,13 +4,13 @@ require "spec_helper"
 
 RSpec.describe "Streaming Response Integration", :integration do
   let(:config) do
-    AsyncHttpPool::Configuration.new(
+    PatientHttp::Configuration.new(
       max_connections: 3,
       request_timeout: 10
     )
   end
 
-  let(:processor) { AsyncHttpPool::Processor.new(config) }
+  let(:processor) { PatientHttp::Processor.new(config) }
 
   around do |example|
     # Disable WebMock for integration tests
@@ -33,7 +33,7 @@ RSpec.describe "Streaming Response Integration", :integration do
     # Create 3 concurrent requests that each take 500ms
     # If they run concurrently (non-blocking), total time should be ~500ms
     # If they block each other (sequential), total time would be ~1500ms
-    template = AsyncHttpPool::RequestTemplate.new(base_url: test_web_server.base_url)
+    template = PatientHttp::RequestTemplate.new(base_url: test_web_server.base_url)
     task_handlers = []
 
     start_time = Time.now
@@ -47,7 +47,7 @@ RSpec.describe "Streaming Response Integration", :integration do
         "args" => [i]
       })
       task_handlers << handler
-      task = AsyncHttpPool::RequestTask.new(
+      task = PatientHttp::RequestTask.new(
         request: request,
         task_handler: handler,
         callback: TestCallback

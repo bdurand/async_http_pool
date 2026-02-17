@@ -6,13 +6,13 @@ RSpec.describe "Processor Shutdown Integration", :integration do
   include Async::RSpec::Reactor
 
   let(:config) do
-    AsyncHttpPool::Configuration.new(
+    PatientHttp::Configuration.new(
       max_connections: 10,
       request_timeout: 10
     )
   end
 
-  let!(:processor) { AsyncHttpPool::Processor.new(config) }
+  let!(:processor) { PatientHttp::Processor.new(config) }
 
   around do |example|
     processor.run do
@@ -36,7 +36,7 @@ RSpec.describe "Processor Shutdown Integration", :integration do
   describe "clean shutdown with completion" do
     it "allows in-flight requests to complete when timeout is sufficient" do
       # Build request
-      template = AsyncHttpPool::RequestTemplate.new(base_url: test_web_server.base_url)
+      template = PatientHttp::RequestTemplate.new(base_url: test_web_server.base_url)
       request = template.get("/test/200")
 
       # Create request task
@@ -46,7 +46,7 @@ RSpec.describe "Processor Shutdown Integration", :integration do
         "args" => []
       })
 
-      request_task = AsyncHttpPool::RequestTask.new(
+      request_task = PatientHttp::RequestTask.new(
         request: request,
         task_handler: handler,
         callback: TestCallback,
@@ -65,7 +65,7 @@ RSpec.describe "Processor Shutdown Integration", :integration do
       # Verify on_complete was called (request completed)
       expect(handler.completions.size).to eq(1)
       response = handler.completions.first[:response]
-      expect(response).to be_a(AsyncHttpPool::Response)
+      expect(response).to be_a(PatientHttp::Response)
       expect(response.status).to eq(200)
       # Verify response contains request info
       response_data = JSON.parse(response.body)
@@ -83,7 +83,7 @@ RSpec.describe "Processor Shutdown Integration", :integration do
   describe "forced shutdown with re-enqueue" do
     it "re-enqueues in-flight requests when timeout is insufficient" do
       # Build request
-      template = AsyncHttpPool::RequestTemplate.new(base_url: test_web_server.base_url)
+      template = PatientHttp::RequestTemplate.new(base_url: test_web_server.base_url)
       request = template.get("/delay/250")
 
       # Create request task
@@ -93,7 +93,7 @@ RSpec.describe "Processor Shutdown Integration", :integration do
         "args" => %w[original_arg1 original_arg2]
       })
 
-      request_task = AsyncHttpPool::RequestTask.new(
+      request_task = PatientHttp::RequestTask.new(
         request: request,
         task_handler: handler,
         callback: TestCallback
@@ -125,7 +125,7 @@ RSpec.describe "Processor Shutdown Integration", :integration do
   describe "multiple in-flight requests during shutdown" do
     it "completes fast requests and re-enqueues slow requests" do
       # Build and enqueue 5 requests
-      template = AsyncHttpPool::RequestTemplate.new(base_url: test_web_server.base_url)
+      template = PatientHttp::RequestTemplate.new(base_url: test_web_server.base_url)
       task_handlers = []
 
       5.times do |i|
@@ -138,7 +138,7 @@ RSpec.describe "Processor Shutdown Integration", :integration do
         })
         task_handlers << handler
 
-        request_task = AsyncHttpPool::RequestTask.new(
+        request_task = PatientHttp::RequestTask.new(
           request: request,
           task_handler: handler,
           callback: TestCallback,

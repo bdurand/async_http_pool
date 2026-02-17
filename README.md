@@ -1,8 +1,8 @@
-# AsyncHttpPool
+# PatientHttp
 
-[![Continuous Integration](https://github.com/bdurand/async_http_pool/actions/workflows/continuous_integration.yml/badge.svg)](https://github.com/bdurand/async_http_pool/actions/workflows/continuous_integration.yml)
+[![Continuous Integration](https://github.com/bdurand/patient_http/actions/workflows/continuous_integration.yml/badge.svg)](https://github.com/bdurand/patient_http/actions/workflows/continuous_integration.yml)
 [![Ruby Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://github.com/testdouble/standard)
-[![Gem Version](https://badge.fury.io/rb/async_http_pool.svg)](https://badge.fury.io/rb/async_http_pool)
+[![Gem Version](https://badge.fury.io/rb/patient_http.svg)](https://badge.fury.io/rb/patient_http)
 
 Generic async HTTP connection pool for Ruby applications using Fiber-based concurrency.
 
@@ -10,7 +10,7 @@ Generic async HTTP connection pool for Ruby applications using Fiber-based concu
 
 Applications that make HTTP requests from within threaded environments often find that threads block waiting for I/O. A single slow API response holds an entire thread hostage, preventing it from doing other work. When many threads are blocked on HTTP I/O simultaneously, throughput collapses.
 
-AsyncHttpPool solves this by running HTTP requests in a dedicated processor thread that uses Ruby's Fiber scheduler for non-blocking I/O. Application threads hand off HTTP requests to the processor and return immediately. The processor handles hundreds of concurrent HTTP connections using fibers, then notifies the application when responses arrive via a pluggable callback mechanism.
+PatientHttp solves this by running HTTP requests in a dedicated processor thread that uses Ruby's Fiber scheduler for non-blocking I/O. Application threads hand off HTTP requests to the processor and return immediately. The processor handles hundreds of concurrent HTTP connections using fibers, then notifies the application when responses arrive via a pluggable callback mechanism.
 
 This design keeps application threads free to do other work while HTTP requests are in flight.
 
@@ -21,7 +21,7 @@ This design keeps application threads free to do other work while HTTP requests 
 The `TaskHandler` is the integration point between the pool and your application. It defines what happens when a request completes, fails, or needs to be retried.
 
 ```ruby
-class MyTaskHandler < AsyncHttpPool::TaskHandler
+class MyTaskHandler < PatientHttp::TaskHandler
   def initialize(job_id)
     @job_id = job_id
   end
@@ -51,24 +51,24 @@ end
 
 ```ruby
 # Configure the processor
-config = AsyncHttpPool::Configuration.new(
+config = PatientHttp::Configuration.new(
   max_connections: 256,
   request_timeout: 60
 )
 
 # Start the processor
-processor = AsyncHttpPool::Processor.new(config)
+processor = PatientHttp::Processor.new(config)
 processor.start
 
 # Build a request
-request = AsyncHttpPool::Request.new(
+request = PatientHttp::Request.new(
   :get,
   "https://api.example.com/users/123",
   headers: {"Authorization" => "Bearer token"}
 )
 
 # Create a task with your handler
-task = AsyncHttpPool::RequestTask.new(
+task = PatientHttp::RequestTask.new(
   request: request,
   task_handler: MyTaskHandler.new("job-123"),
   callback: "FetchDataCallback",
@@ -117,7 +117,7 @@ end
 To treat non-2xx responses as errors instead, set `raise_error_responses: true` on the `RequestTask`:
 
 ```ruby
-task = AsyncHttpPool::RequestTask.new(
+task = PatientHttp::RequestTask.new(
   request: request,
   task_handler: handler,
   callback: "ApiCallback",
@@ -129,7 +129,7 @@ When enabled, non-2xx responses call `TaskHandler#on_error` with an `HttpError` 
 
 ```ruby
 def on_error(error)
-  if error.is_a?(AsyncHttpPool::HttpError)
+  if error.is_a?(PatientHttp::HttpError)
     puts error.status           # HTTP status code
     puts error.url              # Request URL
     puts error.response.body    # Response body
@@ -142,7 +142,7 @@ end
 For repeated requests to the same API, use `RequestTemplate` to share configuration:
 
 ```ruby
-template = AsyncHttpPool::RequestTemplate.new(
+template = PatientHttp::RequestTemplate.new(
   base_url: "https://api.example.com",
   headers: {"Authorization" => "Bearer #{ENV['API_KEY']}"},
   timeout: 60
@@ -157,20 +157,20 @@ Templates support all HTTP methods (`get`, `post`, `put`, `patch`, `delete`) and
 
 ## RequestHelper Mixin
 
-Use `AsyncHttpPool::RequestHelper` when you want a simpler API for creating and dispatching async HTTP requests directly from your class.
+Use `PatientHttp::RequestHelper` when you want a simpler API for creating and dispatching async HTTP requests directly from your class.
 
 This module allows you to use the same interface for making HTTP requests while swapping out the underlying queueing mechanism for handling responses asynchronously. By registering a custom handler, you can integrate with any job queue system (Sidekiq, Solid Queue, etc.) without changing your application code that makes HTTP requests. This decouples your request interface from your async processing infrastructure.
 
 1. Register a request handler once. The handler receives a `RequestContext` and is responsible for dispatching the request through your app's queue/processor integration.
-2. Include `AsyncHttpPool::RequestHelper` in your class.
+2. Include `PatientHttp::RequestHelper` in your class.
 3. Optionally define a `request_template` for shared `base_url`, headers, and timeout.
 4. Call `async_get`, `async_post`, `async_put`, `async_patch`, `async_delete`, or `async_request`.
 
 ```ruby
-AsyncHttpPool::RequestHelper.register_handler do |request_context|
+PatientHttp::RequestHelper.register_handler do |request_context|
   # Example integration point. Adapt this to your app.
   # Build a RequestTask and enqueue it to your processor.
-  task = AsyncHttpPool::RequestTask.new(
+  task = PatientHttp::RequestTask.new(
     request: request_context.request,
     task_handler: MyTaskHandler.new,
     callback: request_context.callback,
@@ -182,7 +182,7 @@ AsyncHttpPool::RequestHelper.register_handler do |request_context|
 end
 
 class ApiClient
-  include AsyncHttpPool::RequestHelper
+  include PatientHttp::RequestHelper
 
   request_template(
     base_url: "https://api.example.com",
@@ -212,7 +212,7 @@ end
 You can also call the `async_*` methods directly on `RequestHelper` if you don't want to include the module:
 
 ```ruby
-AsyncHttpPool::RequestHelper.async_get(
+PatientHttp::RequestHelper.async_get(
   "https://api.example.com/users/123",
   callback: FetchUserCallback,
   callback_args: {user_id: 123}
@@ -226,7 +226,7 @@ If you are using the [sidekiq-async_http](https://github.com/bdurand/sidekiq-asy
 Pass custom data through the request/response cycle using `callback_args`:
 
 ```ruby
-task = AsyncHttpPool::RequestTask.new(
+task = PatientHttp::RequestTask.new(
   request: request,
   task_handler: handler,
   callback: "FetchDataCallback",
@@ -245,7 +245,7 @@ Callback args must contain only JSON-native types (`nil`, `true`, `false`, `Stri
 
 ## Response and Error Objects
 
-The `AsyncHttpPool::Response` and error objects are designed to be serializable and deserializable as JSON, making them safe to pass through job queues and across process boundaries. This allows you to enqueue the response or error data in your `TaskHandler` callbacks and process them asynchronously in another context.
+The `PatientHttp::Response` and error objects are designed to be serializable and deserializable as JSON, making them safe to pass through job queues and across process boundaries. This allows you to enqueue the response or error data in your `TaskHandler` callbacks and process them asynchronously in another context.
 
 Both response and error objects provide `as_json` and `to_json` methods for serialization:
 
@@ -264,8 +264,8 @@ end
 When deserializing, use the class methods to reconstruct the objects:
 
 ```ruby
-response = AsyncHttpPool::Response.from_json(json_data)
-error = AsyncHttpPool::HttpError.from_json(json_data)
+response = PatientHttp::Response.from_json(json_data)
+error = PatientHttp::HttpError.from_json(json_data)
 ```
 
 The `Response` object includes the HTTP status code, headers, body, and callback arguments. Error objects (`HttpError`, `RedirectError`, `RequestError`) include the error message, context about the request, and callback arguments.
@@ -283,7 +283,7 @@ If you are using a job queue or background processing system, this allows you to
 config.register_payload_store(:my_store, adapter: :file, directory: "/tmp/payloads")
 
 # Use the ExternalStorage class to set and fetch stored payloads in your callbacks.
-storage = AsyncHttpPool::ExternalStorage.new(config)
+storage = PatientHttp::ExternalStorage.new(config)
 
 large_response_data = storage.store(large_response.as_json)
 # Returns a reference like: {"$ref" => {"store" => "my_store", "key" => "abc123"}}
@@ -317,7 +317,7 @@ redis = RedisClient.new(url: ENV["REDIS_URL"])
 config.register_payload_store(:redis, adapter: :redis, redis: redis, ttl: 86400)
 ```
 
-Options: `redis:` (required), `ttl:` (seconds, optional), `key_prefix:` (default: `"async_http_pool:payloads:"`)
+Options: `redis:` (required), `ttl:` (seconds, optional), `key_prefix:` (default: `"patient_http:payloads:"`)
 
 #### S3 Store
 
@@ -329,14 +329,14 @@ bucket = s3.bucket("my-payloads-bucket")
 config.register_payload_store(:s3, adapter: :s3, bucket: bucket)
 ```
 
-Options: `bucket:` (required), `key_prefix:` (default: `"async_http_pool/payloads/"`)
+Options: `bucket:` (required), `key_prefix:` (default: `"patient_http/payloads/"`)
 
 #### Custom Stores
 
-Implement your own by subclassing `AsyncHttpPool::PayloadStore::Base`:
+Implement your own by subclassing `PatientHttp::PayloadStore::Base`:
 
 ```ruby
-class MyStore < AsyncHttpPool::PayloadStore::Base
+class MyStore < PatientHttp::PayloadStore::Base
   register :my_store, self
 
   def store(key, data)
@@ -360,7 +360,7 @@ Multiple stores can be registered for migration purposes. The last registered st
 ## Configuration
 
 ```ruby
-config = AsyncHttpPool::Configuration.new(
+config = PatientHttp::Configuration.new(
   # Maximum concurrent HTTP requests (default: 256)
   max_connections: 256,
 
@@ -373,7 +373,7 @@ config = AsyncHttpPool::Configuration.new(
   # Maximum response body size in bytes (default: 1MB)
   max_response_size: 1024 * 1024,
 
-  # Default User-Agent header (default: "AsyncHttpPool")
+  # Default User-Agent header (default: "PatientHttp")
   user_agent: "MyApp/1.0",
 
   # Treat non-2xx responses as errors by default (default: false)
@@ -421,7 +421,7 @@ stopped -> starting -> running -> draining -> stopping -> stopped
 - **stopping**: Shutting down, re-enqueuing incomplete requests
 
 ```ruby
-processor = AsyncHttpPool::Processor.new(config)
+processor = PatientHttp::Processor.new(config)
 
 processor.start              # Start processing
 processor.running?           # => true
@@ -440,7 +440,7 @@ When the processor stops with in-flight requests, it calls `TaskHandler#retry` o
 Register observers to monitor processor events:
 
 ```ruby
-class MetricsObserver < AsyncHttpPool::ProcessorObserver
+class MetricsObserver < PatientHttp::ProcessorObserver
   def request_start(request_task)
     StatsD.increment("http_pool.request.start")
   end
@@ -466,13 +466,13 @@ processor.observe(MetricsObserver.new)
 Use `SynchronousExecutor` to execute requests synchronously in tests:
 
 ```ruby
-task = AsyncHttpPool::RequestTask.new(
+task = PatientHttp::RequestTask.new(
   request: request,
   task_handler: handler,
   callback: "MyCallback"
 )
 
-executor = AsyncHttpPool::SynchronousExecutor.new(
+executor = PatientHttp::SynchronousExecutor.new(
   task,
   config: config,
   on_complete: ->(response) { StatsD.increment("complete") },
@@ -491,7 +491,7 @@ For Sidekiq integration, see the [sidekiq-async_http](https://github.com/bdurand
 Add this line to your application's Gemfile:
 
 ```ruby
-gem "async_http_pool"
+gem "patient_http"
 ```
 
 Then execute:
@@ -502,7 +502,7 @@ bundle install
 
 ## Contributing
 
-Open a pull request on [GitHub](https://github.com/bdurand/async_http_pool).
+Open a pull request on [GitHub](https://github.com/bdurand/patient_http).
 
 Please use the [standardrb](https://github.com/testdouble/standard) syntax and lint your code with `standardrb --fix` before submitting.
 
