@@ -30,15 +30,15 @@ class ActiveRecordHelper
 
       # Create the table
       ActiveRecord::Schema.define do
-        create_table :async_http_pool_payloads, id: false, force: true do |t|
+        create_table :patient_http_payloads, id: false, force: true do |t|
           t.string :key, null: false, limit: 36
           t.text :data, null: false
 
           t.timestamps
         end
 
-        add_index :async_http_pool_payloads, :key, unique: true
-        add_index :async_http_pool_payloads, :created_at
+        add_index :patient_http_payloads, :key, unique: true
+        add_index :patient_http_payloads, :created_at
       end
 
       # Release the connection so it's available to tests
@@ -48,7 +48,7 @@ class ActiveRecordHelper
     def flushdb
       return unless available?
 
-      AsyncHttpPool::PayloadStore::ActiveRecordStore::Payload.delete_all
+      PatientHttp::PayloadStore::ActiveRecordStore::Payload.delete_all
     end
   end
 end

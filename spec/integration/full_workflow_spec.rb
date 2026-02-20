@@ -6,13 +6,13 @@ RSpec.describe "Full Workflow Integration", :integration do
   include Async::RSpec::Reactor
 
   let(:config) do
-    AsyncHttpPool::Configuration.new(
+    PatientHttp::Configuration.new(
       max_connections: 10,
       request_timeout: 5
     )
   end
 
-  let(:processor) { AsyncHttpPool::Processor.new(config) }
+  let(:processor) { PatientHttp::Processor.new(config) }
 
   around do |example|
     # Disable WebMock completely for integration tests
@@ -32,7 +32,7 @@ RSpec.describe "Full Workflow Integration", :integration do
   describe "successful POST request workflow" do
     it "makes async POST request and calls completion handler with response containing callback_args" do
       # Build request
-      template = AsyncHttpPool::RequestTemplate.new(base_url: test_web_server.base_url)
+      template = PatientHttp::RequestTemplate.new(base_url: test_web_server.base_url)
       request = template.post(
         "/test/200",
         body: '{"event":"user.created","user_id":123}',
@@ -49,7 +49,7 @@ RSpec.describe "Full Workflow Integration", :integration do
         "args" => []
       })
 
-      request_task = AsyncHttpPool::RequestTask.new(
+      request_task = PatientHttp::RequestTask.new(
         request: request,
         task_handler: handler,
         callback: TestCallback,
@@ -68,7 +68,7 @@ RSpec.describe "Full Workflow Integration", :integration do
       # Verify response details
       response = handler.completions.first[:response]
 
-      expect(response).to be_a(AsyncHttpPool::Response)
+      expect(response).to be_a(PatientHttp::Response)
       expect(response.status).to eq(200)
 
       # Parse the response body JSON
@@ -91,7 +91,7 @@ RSpec.describe "Full Workflow Integration", :integration do
   describe "successful GET request workflow" do
     it "makes async GET request and calls completion handler" do
       # Build request
-      template = AsyncHttpPool::RequestTemplate.new(base_url: test_web_server.base_url)
+      template = PatientHttp::RequestTemplate.new(base_url: test_web_server.base_url)
       request = template.get(
         "/test/200",
         headers: {"Authorization" => "Bearer token123"}
@@ -104,7 +104,7 @@ RSpec.describe "Full Workflow Integration", :integration do
         "args" => []
       })
 
-      request_task = AsyncHttpPool::RequestTask.new(
+      request_task = PatientHttp::RequestTask.new(
         request: request,
         task_handler: handler,
         callback: TestCallback,
@@ -131,7 +131,7 @@ RSpec.describe "Full Workflow Integration", :integration do
 
   describe "multiple concurrent requests" do
     it "handles multiple requests with different responses" do
-      template = AsyncHttpPool::RequestTemplate.new(base_url: test_web_server.base_url)
+      template = PatientHttp::RequestTemplate.new(base_url: test_web_server.base_url)
       task_handlers = []
 
       # Enqueue 3 requests with different status codes
@@ -143,7 +143,7 @@ RSpec.describe "Full Workflow Integration", :integration do
           "args" => [i]
         })
         task_handlers << handler
-        request_task = AsyncHttpPool::RequestTask.new(
+        request_task = PatientHttp::RequestTask.new(
           request: request,
           task_handler: handler,
           callback: TestCallback
@@ -166,7 +166,7 @@ RSpec.describe "Full Workflow Integration", :integration do
 
   describe "request with params and headers" do
     it "properly encodes params and sends headers" do
-      template = AsyncHttpPool::RequestTemplate.new(base_url: test_web_server.base_url)
+      template = PatientHttp::RequestTemplate.new(base_url: test_web_server.base_url)
       request = template.get(
         "/test/200",
         params: {"q" => "ruby", "page" => "2", "limit" => "50"},
@@ -177,7 +177,7 @@ RSpec.describe "Full Workflow Integration", :integration do
       )
 
       handler = TestTaskHandler.new({"class" => "Worker", "jid" => "jid", "args" => []})
-      request_task = AsyncHttpPool::RequestTask.new(
+      request_task = PatientHttp::RequestTask.new(
         request: request,
         task_handler: handler,
         callback: TestCallback
@@ -203,10 +203,10 @@ RSpec.describe "Full Workflow Integration", :integration do
   describe "processor lifecycle" do
     it "can be started and stopped cleanly" do
       # Make a request
-      template = AsyncHttpPool::RequestTemplate.new(base_url: test_web_server.base_url)
+      template = PatientHttp::RequestTemplate.new(base_url: test_web_server.base_url)
       request = template.get("/test/200")
       handler = TestTaskHandler.new({"class" => "Worker", "jid" => "jid", "args" => []})
-      request_task = AsyncHttpPool::RequestTask.new(
+      request_task = PatientHttp::RequestTask.new(
         request: request,
         task_handler: handler,
         callback: TestCallback

@@ -16,7 +16,7 @@ require "webmock/rspec"
 require "async/rspec"
 require "console"
 
-require_relative "../lib/async_http_pool"
+require_relative "../lib/patient_http"
 
 # Suppress Async task warnings (like EPIPE errors from early connection closes)
 # These are expected in tests that intentionally close connections early
@@ -39,7 +39,7 @@ def test_web_server
   $test_web_server ||= TestWebServer.new # rubocop:disable Style/GlobalVars
 end
 
-AsyncHttpPool.testing = true
+PatientHttp.testing = true
 
 RSpec.configure do |config|
   config.disable_monkey_patching!
@@ -82,10 +82,10 @@ RSpec.configure do |config|
   end
 
   config.around(:each, :disable_testing_mode) do |example|
-    AsyncHttpPool.testing = false
+    PatientHttp.testing = false
     example.run
   ensure
-    AsyncHttpPool.testing = true
+    PatientHttp.testing = true
   end
 
   config.after(:suite) do

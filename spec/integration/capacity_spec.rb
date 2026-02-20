@@ -6,13 +6,13 @@ RSpec.describe "Capacity Limit Integration", :integration do
   include Async::RSpec::Reactor
 
   let(:config) do
-    AsyncHttpPool::Configuration.new(
+    PatientHttp::Configuration.new(
       max_connections: 2, # Set low limit for testing
       request_timeout: 10
     )
   end
 
-  let!(:processor) { AsyncHttpPool::Processor.new(config) }
+  let!(:processor) { PatientHttp::Processor.new(config) }
 
   around do |example|
     # Disable WebMock completely for integration tests
@@ -32,7 +32,7 @@ RSpec.describe "Capacity Limit Integration", :integration do
   describe "enforcing max_connections limit" do
     it "raises error when attempting to exceed capacity and allows enqueue after request completes" do
       # Build client
-      template = AsyncHttpPool::RequestTemplate.new(base_url: test_web_server.base_url)
+      template = PatientHttp::RequestTemplate.new(base_url: test_web_server.base_url)
       task_handlers = []
 
       # Enqueue first long-running request
@@ -43,7 +43,7 @@ RSpec.describe "Capacity Limit Integration", :integration do
         "args" => ["arg1"]
       })
       task_handlers << handler1
-      request_task1 = AsyncHttpPool::RequestTask.new(
+      request_task1 = PatientHttp::RequestTask.new(
         request: request1,
         task_handler: handler1,
         callback: TestCallback
@@ -58,7 +58,7 @@ RSpec.describe "Capacity Limit Integration", :integration do
         "args" => ["arg2"]
       })
       task_handlers << handler2
-      request_task2 = AsyncHttpPool::RequestTask.new(
+      request_task2 = PatientHttp::RequestTask.new(
         request: request2,
         task_handler: handler2,
         callback: TestCallback
@@ -76,7 +76,7 @@ RSpec.describe "Capacity Limit Integration", :integration do
         "args" => ["arg3"]
       })
       task_handlers << handler3
-      request_task3 = AsyncHttpPool::RequestTask.new(
+      request_task3 = PatientHttp::RequestTask.new(
         request: request3,
         task_handler: handler3,
         callback: TestCallback
@@ -88,7 +88,7 @@ RSpec.describe "Capacity Limit Integration", :integration do
       # Should raise error due to capacity limit
       expect {
         processor.enqueue(request_task3)
-      }.to raise_error(AsyncHttpPool::MaxCapacityError)
+      }.to raise_error(PatientHttp::MaxCapacityError)
 
       processor.wait_for_idle
 

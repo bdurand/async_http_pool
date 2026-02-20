@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-# Test implementation of AsyncHttpPool::TaskHandler that records all lifecycle
-# calls without any Sidekiq dependency. Used in async_http_pool specs.
-class TestTaskHandler < AsyncHttpPool::TaskHandler
+# Test implementation of PatientHttp::TaskHandler that records all lifecycle
+# calls without any Sidekiq dependency. Used in patient_http specs.
+class TestTaskHandler < PatientHttp::TaskHandler
   attr_reader :completions, :errors, :retries, :job_data
 
   def initialize(job_data = {})
