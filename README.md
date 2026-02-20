@@ -161,21 +161,21 @@ Use `PatientHttp::RequestHelper` when you want a simpler API for creating and di
 
 This module allows you to use the same interface for making HTTP requests while swapping out the underlying queueing mechanism for handling responses asynchronously. By registering a custom handler, you can integrate with any job queue system (Sidekiq, Solid Queue, etc.) without changing your application code that makes HTTP requests. This decouples your request interface from your async processing infrastructure.
 
-1. Register a request handler once. The handler receives a `RequestContext` and is responsible for dispatching the request through your app's queue/processor integration.
+1. Register a request handler once. The handler receives keyword arguments (`request`, `callback`, `callback_args`, `raise_error_responses`) and is responsible for dispatching the request through your app's queue/processor integration.
 2. Include `PatientHttp::RequestHelper` in your class.
 3. Optionally define a `request_template` for shared `base_url`, headers, and timeout.
 4. Call `async_get`, `async_post`, `async_put`, `async_patch`, `async_delete`, or `async_request`.
 
 ```ruby
-PatientHttp::RequestHelper.register_handler do |request_context|
+PatientHttp::RequestHelper.register_handler do |request:, callback:, callback_args: nil, raise_error_responses: nil|
   # Example integration point. Adapt this to your app.
   # Build a RequestTask and enqueue it to your processor.
   task = PatientHttp::RequestTask.new(
-    request: request_context.request,
+    request: request,
     task_handler: MyTaskHandler.new,
-    callback: request_context.callback,
-    callback_args: request_context.callback_args,
-    raise_error_responses: request_context.raise_error_responses
+    callback: callback,
+    callback_args: callback_args,
+    raise_error_responses: raise_error_responses
   )
 
   processor.enqueue(task)
@@ -219,7 +219,7 @@ PatientHttp::RequestHelper.async_get(
 )
 ```
 
-If you are using the [sidekiq-async_http](https://github.com/bdurand/sidekiq-async_http) gem or the [solid_queue-async_http](https://github.com/bdurand/solid_queue-async_http) gem, the appropriate handler will automatically be registered for you.
+If you are using the [patient_http-sidekiq](https://github.com/bdurand/patient_http-sidekiq) gem or the [patient_http-solid_queue](https://github.com/bdurand/patient_http-solid_queue) gem, the appropriate handler will automatically be registered for you.
 
 ## Callback Arguments
 
@@ -484,7 +484,9 @@ executor.call
 
 ## Integration
 
-For Sidekiq integration, see the [sidekiq-async_http](https://github.com/bdurand/sidekiq-async_http) gem which provides workers, lifecycle hooks, crash recovery, and a Web UI built on this library.
+For Sidekiq integration, see the [patient_http-sidekiq](https://github.com/bdurand/patient_http-sidekiq) gem which provides workers, lifecycle hooks, crash recovery, and a Web UI built on this library.
+
+For Solid Queue integration, see the [patient_http-solid_queue](https://github.com/bdurand/patient_http-solid_queue) gem which provides similar functionality for Solid Queue.
 
 ## Installation
 

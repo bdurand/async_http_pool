@@ -71,7 +71,7 @@ RSpec.describe PatientHttp::Processor do
     it "names the reactor thread" do
       processor.start
       thread = processor.instance_variable_get(:@reactor_thread)
-      expect(thread.name).to eq("async-http-processor")
+      expect(thread.name).to eq("patient-http-processor")
     end
 
     it "does not start if already running" do

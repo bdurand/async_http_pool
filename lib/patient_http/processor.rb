@@ -44,7 +44,7 @@ module PatientHttp
       end
 
       @reactor_thread = Thread.new do
-        Thread.current.name = "async-http-processor"
+        Thread.current.name = "patient-http-processor"
         run_reactor
       rescue => e
         @config.logger&.error("[PatientHttp] Processor error: #{e.message}\n#{e.backtrace.join("\n")}")

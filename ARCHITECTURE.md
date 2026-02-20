@@ -95,13 +95,13 @@ Key benefits:
 Example:
 ```ruby
 # Register a handler once (typically in an initializer)
-PatientHttp::RequestHelper.register_handler do |request_context|
+PatientHttp::RequestHelper.register_handler do |request:, callback:, callback_args: nil, raise_error_responses: nil|
   task = PatientHttp::RequestTask.new(
-    request: request_context.request,
+    request: request,
     task_handler: MyTaskHandler.new,
-    callback: request_context.callback,
-    callback_args: request_context.callback_args,
-    raise_error_responses: request_context.raise_error_responses
+    callback: callback,
+    callback_args: callback_args,
+    raise_error_responses: raise_error_responses
   )
   processor.enqueue(task)
 end
@@ -126,7 +126,7 @@ class ApiClient
 end
 ```
 
-The `RequestHelper` delegates to the registered handler, which translates the `RequestContext` into whatever format your job system needs. This allows you to:
+The `RequestHelper` delegates to the registered handler, passing the request details as keyword arguments. The handler translates these into whatever format your job system needs. This allows you to:
 - Switch from Sidekiq to Solid Queue without changing `ApiClient`
 - Use different queue systems in different environments (inline processing in tests, background jobs in production)
 - Test request logic independently of the queue mechanism

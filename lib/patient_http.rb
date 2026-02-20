@@ -54,7 +54,6 @@ module PatientHttp
   autoload :RecursiveRedirectError, File.join(__dir__, "patient_http/redirect_error")
   autoload :RedirectError, File.join(__dir__, "patient_http/redirect_error")
   autoload :Request, File.join(__dir__, "patient_http/request")
-  autoload :RequestContext, File.join(__dir__, "patient_http/request_context")
   autoload :RequestError, File.join(__dir__, "patient_http/request_error")
   autoload :RequestHelper, File.join(__dir__, "patient_http/request_helper")
   autoload :RequestTask, File.join(__dir__, "patient_http/request_task")
@@ -66,7 +65,7 @@ module PatientHttp
   autoload :TaskHandler, File.join(__dir__, "patient_http/task_handler")
   autoload :TooManyRedirectsError, File.join(__dir__, "patient_http/redirect_error")
 
-  @testing = false
+  @testing = ENV["RAILS_ENV"] == "test"
 
   class << self
     # Check if running in testing mode.

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module PatientHttp
-  # Configuration for the async HTTP pool processor.
+  # Configuration for the PatientHttp processor.
   #
   # This class holds all configuration options for the HTTP connection pool,
   # including connection limits, timeouts, and other HTTP client settings.
