@@ -2,7 +2,7 @@
 
 ## Overview
 
-AsyncHttpPool provides a mechanism to offload HTTP requests from application threads to a dedicated async I/O processor. The gem uses Ruby's Fiber-based concurrency to handle hundreds of concurrent HTTP requests without blocking application threads.
+PatientHttp provides a mechanism to offload HTTP requests from application threads to a dedicated async I/O processor. The gem uses Ruby's Fiber-based concurrency to handle hundreds of concurrent HTTP requests without blocking application threads.
 
 ## Key Design Principles
 
@@ -55,7 +55,7 @@ The `TaskHandler` abstract class defines how the processor communicates results 
 
 Example:
 ```ruby
-class MyTaskHandler < AsyncHttpPool::TaskHandler
+class MyTaskHandler < PatientHttp::TaskHandler
   def initialize(job_id)
     @job_id = job_id
   end
@@ -74,8 +74,8 @@ class MyTaskHandler < AsyncHttpPool::TaskHandler
 end
 
 # Enqueue a request
-task = AsyncHttpPool::RequestTask.new(
-  request: AsyncHttpPool::Request.new(:get, "https://api.example.com/data"),
+task = PatientHttp::RequestTask.new(
+  request: PatientHttp::Request.new(:get, "https://api.example.com/data"),
   task_handler: MyTaskHandler.new("job-123"),
   callback: "ProcessDataCallback",
   callback_args: {user_id: 123}
@@ -95,20 +95,20 @@ Key benefits:
 Example:
 ```ruby
 # Register a handler once (typically in an initializer)
-AsyncHttpPool::RequestHelper.register_handler do |request_context|
-  task = AsyncHttpPool::RequestTask.new(
-    request: request_context.request,
+PatientHttp::RequestHelper.register_handler do |request:, callback:, callback_args: nil, raise_error_responses: nil|
+  task = PatientHttp::RequestTask.new(
+    request: request,
     task_handler: MyTaskHandler.new,
-    callback: request_context.callback,
-    callback_args: request_context.callback_args,
-    raise_error_responses: request_context.raise_error_responses
+    callback: callback,
+    callback_args: callback_args,
+    raise_error_responses: raise_error_responses
   )
   processor.enqueue(task)
 end
 
 # Use in your application code
 class ApiClient
-  include AsyncHttpPool::RequestHelper
+  include PatientHttp::RequestHelper
 
   request_template(
     base_url: "https://api.example.com",
@@ -126,7 +126,7 @@ class ApiClient
 end
 ```
 
-The `RequestHelper` delegates to the registered handler, which translates the `RequestContext` into whatever format your job system needs. This allows you to:
+The `RequestHelper` delegates to the registered handler, passing the request details as keyword arguments. The handler translates these into whatever format your job system needs. This allows you to:
 - Switch from Sidekiq to Solid Queue without changing `ApiClient`
 - Use different queue systems in different environments (inline processing in tests, background jobs in production)
 - Test request logic independently of the queue mechanism
