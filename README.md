@@ -155,18 +155,14 @@ post_request = template.post("/users", json: {name: "John"})
 
 Templates support all HTTP methods (`get`, `post`, `put`, `patch`, `delete`) and handle URL joining, header merging, and query parameter encoding.
 
-## RequestHelper Mixin
+## Standard Interface
 
-Use `PatientHttp::RequestHelper` when you want a simpler API for creating and dispatching async HTTP requests directly from your class.
+The `PatientHttp` module provides a standard interface for building and dispatching requests without needing to directly interact with the processor or task handlers. This allows you to write application code that makes HTTP requests without coupling it to the underlying async processing infrastructure.
 
-This module allows you to use the same interface for making HTTP requests while swapping out the underlying queueing mechanism for handling responses asynchronously. By registering a custom handler, you can integrate with any job queue system (Sidekiq, Solid Queue, etc.) without changing your application code that makes HTTP requests. This decouples your request interface from your async processing infrastructure.
-
-1. Register a request handler once with `PatientHttp.register_handler`. The handler receives keyword arguments (`request`, `callback`, `callback_args`, `raise_error_responses`) and is responsible for dispatching the request through your app's queue/processor integration.
-2. Include `PatientHttp::RequestHelper` in your class.
-3. Optionally define a `request_template` for shared `base_url`, headers, and timeout.
-4. Call `async_get`, `async_post`, `async_put`, `async_patch`, `async_delete`, or `async_request`.
+You will need to register a request handler with `PatientHttp.register_handler` that defines how requests are dispatched to your job queue or background processing system. Once registered, you can use the `PatientHttp` class methods or the `RequestHelper` mixin to make async HTTP requests with callbacks.
 
 ```ruby
+# The handler receives keyword arguments for the request, callback, and any additional callback arguments.
 PatientHttp.register_handler do |request:, callback:, callback_args: nil, raise_error_responses: nil|
   # Example integration point. Adapt this to your app.
   # Build a RequestTask and enqueue it to your processor.
@@ -181,6 +177,27 @@ PatientHttp.register_handler do |request:, callback:, callback_args: nil, raise_
   processor.enqueue(task)
 end
 
+# Now you can make requests directly through the PatientHttp interface with the .request,
+# .get, .post, .patch, .put, and .delete class methods:
+PatientHttp.get(
+  "https://api.example.com/users/123",
+  callback: FetchUserCallback,
+  callback_args: {user_id: 123}
+)
+```
+
+If you are using the [patient_http-sidekiq](https://github.com/bdurand/patient_http-sidekiq) gem or the [patient_http-solid_queue](https://github.com/bdurand/patient_http-solid_queue) gem, the appropriate handler will automatically be registered for you.
+
+### RequestHelper Mixin
+
+Use `PatientHttp::RequestHelper` when you want a simple API for creating and dispatching async HTTP requests directly from your class.
+
+1, Register a request handler with `PatientHttp.register_handler` that defines how requests are dispatched to your job queue or background processing system.
+2. Include `PatientHttp::RequestHelper` in your class.
+3. Optionally define a `request_template` for shared `base_url`, headers, and timeout.
+4. Call `async_get`, `async_post`, `async_put`, `async_patch`, `async_delete`, or `async_request`.
+
+```ruby
 class ApiClient
   include PatientHttp::RequestHelper
 
@@ -208,20 +225,6 @@ class ApiClient
   end
 end
 ```
-
-You can also call HTTP methods directly on the `PatientHttp` module without including `RequestHelper`:
-
-```ruby
-PatientHttp.get(
-  "https://api.example.com/users/123",
-  callback: FetchUserCallback,
-  callback_args: {user_id: 123}
-)
-```
-
-The `PatientHttp` module provides `get`, `post`, `put`, `patch`, `delete`, and `request` class methods that build a request and dispatch it through the registered handler.
-
-If you are using the [patient_http-sidekiq](https://github.com/bdurand/patient_http-sidekiq) gem or the [patient_http-solid_queue](https://github.com/bdurand/patient_http-solid_queue) gem, the appropriate handler will automatically be registered for you.
 
 ## Callback Arguments
 
