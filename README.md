@@ -4,6 +4,8 @@
 [![Ruby Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://github.com/testdouble/standard)
 [![Gem Version](https://badge.fury.io/rb/patient_http.svg)](https://badge.fury.io/rb/patient_http)
 
+*Built for APIs that like to think.*
+
 Generic async HTTP connection pool for Ruby applications using Fiber-based concurrency.
 
 ## Motivation
@@ -13,6 +15,8 @@ Applications that make HTTP requests from within threaded environments often fin
 PatientHttp solves this by running HTTP requests in a dedicated processor thread that uses Ruby's Fiber scheduler for non-blocking I/O. Application threads hand off HTTP requests to the processor and return immediately. The processor handles hundreds of concurrent HTTP connections using fibers, then notifies the application when responses arrive via a pluggable callback mechanism.
 
 This design keeps application threads free to do other work while HTTP requests are in flight.
+
+In general you will want to use this gem through an integration like [patient_http-sidekiq](https://github.com/bdurand/patient_http-sidekiq) or [patient_http-solid_queue](https://github.com/bdurand/patient_http-solid_queue). These gems provide a request handler that integrates with their respective job processing systems, allowing you to enqueue HTTP requests directly from your application code without coupling it to the underlying processor implementation. See the [integration](#integration) section for details.
 
 ## Quick Start
 
@@ -520,6 +524,8 @@ executor.call
 For Sidekiq integration, see the [patient_http-sidekiq](https://github.com/bdurand/patient_http-sidekiq) gem which provides workers, lifecycle hooks, crash recovery, and a Web UI built on this library.
 
 For Solid Queue integration, see the [patient_http-solid_queue](https://github.com/bdurand/patient_http-solid_queue) gem which provides similar functionality for Solid Queue.
+
+When using an integration gem, you can use the [standard interface](#standard-interface) to make requests without coupling your code to the underlying processor or task handler implementations.
 
 ## Installation
 
