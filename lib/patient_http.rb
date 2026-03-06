@@ -111,6 +111,19 @@ module PatientHttp
       @handler = handler
     end
 
+    # Registers a request handler, raising an error if one is already registered.
+    #
+    # This is a safer alternative to {.register_handler} that prevents accidental
+    # double-registration.
+    #
+    # @param callable [#call, nil] A callable object that will handle requests.
+    # @yield [request, callback, callback_args, raise_error_responses] If a block is given,
+    #   it will be used as the request handler
+    # @raise [RuntimeError] if a handler is already registered
+    # @raise [ArgumentError] if neither a callable nor a block is provided, or if both are provided
+    # @raise [ArgumentError] if the provided callable does not respond to `call`
+    # @raise [ArgumentError] if the handler does not support the required keyword arguments
+    # @return [#call] the registered handler
     def register_handler!(callable = nil, &block)
       if @handler
         raise "A PatientHttp handler is already registered. Unregister the existing handler before registering a new one."

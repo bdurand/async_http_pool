@@ -20,8 +20,8 @@ module PatientHttp
   #    `async_request`.
   #
   # @example Register a handler
-  #   PatientHttp.register_handler do |request_context|
-  #     # Convert request_context into your app-specific task/enqueue operation
+  #   PatientHttp.register_handler do |request:, callback:, callback_args: nil, raise_error_responses: nil|
+  #     # Dispatch the request through your app-specific task/enqueue operation
   #     # and return the request id
   #   end
   #
