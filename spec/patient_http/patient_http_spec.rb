@@ -58,17 +58,13 @@ RSpec.describe PatientHttp do
     it "accepts handlers with all required keyword arguments" do
       handler = proc { |request:, callback:, callback_args:, raise_error_responses:| }
 
-      expect do
-        described_class.register_handler(handler)
-      end.not_to raise_error
+      expect(described_class.register_handler(handler)).to eq(handler)
     end
 
     it "accepts handlers with all required keyword arguments with defaults" do
       handler = proc { |request:, callback:, callback_args: nil, raise_error_responses: nil| }
 
-      expect do
-        described_class.register_handler(handler)
-      end.not_to raise_error
+      expect(described_class.register_handler(handler)).to eq(handler)
     end
 
     it "raises when handler accepts positional parameters" do
@@ -90,9 +86,7 @@ RSpec.describe PatientHttp do
     it "accepts handlers with optional keyword parameters beyond the required ones" do
       handler = proc { |request:, callback:, callback_args: nil, raise_error_responses: nil, extra_param: nil| }
 
-      expect do
-        described_class.register_handler(handler)
-      end.not_to raise_error
+      expect(described_class.register_handler(handler)).to eq(handler)
     end
 
     it "registers a callable object" do
@@ -119,6 +113,22 @@ RSpec.describe PatientHttp do
 
       expect(captured_request).to be(request)
       expect(captured_callback).to eq(callback)
+    end
+  end
+
+  describe ".register_handler!" do
+    it "raises an error if a handler is already registered" do
+      described_class.register_handler { |request:, callback:, callback_args: nil, raise_error_responses: nil| }
+
+      expect do
+        described_class.register_handler! { |request:, callback:, callback_args: nil, raise_error_responses: nil| }
+      end.to raise_error(RuntimeError)
+    end
+
+    it "registers a new handler if one is not already registered" do
+      handler = described_class.register_handler! { |request:, callback:, callback_args: nil, raise_error_responses: nil| }
+      expect(handler).to be_a(Proc)
+      described_class.unregister_handler(handler)
     end
   end
 

@@ -98,7 +98,7 @@ module PatientHttp
     # @raise [ArgumentError] if neither a callable nor a block is provided, or if both are provided
     # @raise [ArgumentError] if the provided callable does not respond to `call`
     # @raise [ArgumentError] if the handler does not support the required keyword arguments
-    # @return [void]
+    # @return [#call] the registered handler
     def register_handler(callable = nil, &block)
       raise ArgumentError.new("Must provide a callable object or a block") unless callable || block_given?
       raise ArgumentError.new("Cannot provide both a callable object and a block") if callable && block_given?
@@ -109,6 +109,14 @@ module PatientHttp
       validate_handler_parameters!(handler)
 
       @handler = handler
+    end
+
+    def register_handler!(callable = nil, &block)
+      if @handler
+        raise "A PatientHttp handler is already registered. Unregister the existing handler before registering a new one."
+      end
+
+      register_handler(callable, &block)
     end
 
     # Unregisters the current request handler.
